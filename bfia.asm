@@ -4,16 +4,24 @@
 	openerr db "Open Error",10,0
 	mallocerr db "Malloc Error",10,0
 	output db "The char is %c",10,0
+
+[section .bss]
+	mem resb 30000
+
 [section .text]
 extern printf, fopen, fgetc, putchar, getchar, malloc, exit
 global main
 main:
-;Aloocate the memory
-	mov rdi, 30000
-	call malloc
-	cmp rax, 0
-	jz malloc_error
-	mov rbp, rax
+;Allocate the memory
+	;Allocate with malloc
+	;mov rdi, 30000
+	;call malloc
+	;cmp rax, 0
+	;jz malloc_error
+	;mov rbp, rax
+	
+	;use .bss memory
+	mov rbp, mem
 
 ;open the source file
 	xor rax, rax
