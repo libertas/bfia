@@ -7,21 +7,15 @@
 
 [section .bss]
 	mem resb 30000
+	code resb 30000
 
 [section .text]
 extern printf, fopen, fgetc, putchar, getchar, malloc, exit
 global main
 main:
 ;Allocate the memory
-	;Allocate with malloc
-	;mov rdi, 30000
-	;call malloc
-	;cmp rax, 0
-	;jz malloc_error
-	;mov rbp, rax
-	
-	;use .bss memory
 	mov rbp, mem
+	mov r12, code
 
 ;open the source file
 	xor rax, rax
@@ -37,28 +31,37 @@ getc:
 	mov rdi, rbx
 	xor rax, rax
 	call fgetc
-	
+	mov byte [r12], al
+	inc r12
+	cmp al, 0xFF	;0XFF is -1 of a char
+	jne	getc
+	mov r12, code	;reset r12 to the start point of the code
+	dec r12			;make r12 one less than the start point for "inc r12"
+
 ;find the meaning of the char
+bf:
+	inc r12
+	mov al, byte [r12]
 	cmp al, 0xFF	;0XFF is -1 of a char
 	je q
 	
-	cmp rax, '+'
+	cmp al, '+'
 	je increase
-	cmp rax, '-'
+	cmp al, '-'
 	je decrease
-	cmp rax, ','
+	cmp al, ','
 	je input
-	cmp rax, '.'
+	cmp al, '.'
 	je display
-	cmp rax, '<'
+	cmp al, '<'
 	je left
-	cmp rax, '>'
+	cmp al, '>'
 	je right
-	cmp rax, '['
+	cmp al, '['
 	je loop
-	cmp rax, ']'
+	cmp al, ']'
 	je endloop
-	jmp getc
+	jmp bf
 
 ;print open error
 open_error:
@@ -85,31 +88,33 @@ qerror:
 ;Instructions of Brainfuck
 increase:
 	inc byte [rbp]
-	jmp getc
+	jmp bf
 
 decrease:
 	dec byte [rbp]
-	jmp getc
+	jmp bf
 
 left:
-	inc rbp
-	jmp getc
+	dec rbp
+	jmp bf
 
 right:
-	dec rbp
-	jmp getc
+	inc rbp
+	jmp bf
 
 input:
 	call getchar
 	mov byte [rbp], al
-	jmp getc
+	jmp bf
 
 display:
 	mov al, byte [rbp]
 	mov rdi, rax
 	call putchar
-	jmp getc
+	jmp bf
 loop:
 	
+	jmp bf
 endloop:
 	
+	jmp bf
