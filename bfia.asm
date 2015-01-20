@@ -13,9 +13,10 @@
 extern printf, fopen, fgetc, putchar, getchar, malloc, exit
 global main
 main:
-;Allocate the memory
-	mov rbp, mem
-	mov r12, code
+;Allocate the memory,prepare the registers
+	mov rbp, mem	;use rbp as the memory of the bf machine
+	mov r12, code	;use r12 as the pointer of the bf code
+	xor r13, r13	;use r13 as the count of the loops
 
 ;open the source file
 	xor rax, rax
@@ -113,8 +114,43 @@ display:
 	call putchar
 	jmp bf
 loop:
-	
+	inc r13
+	mov al, byte [rbp]
+	cmp al, 0
+	jz findend		;if the byte of the memory is 0,find the end of the loop
+	push r12
 	jmp bf
+
 endloop:
-	
+	dec r13
+	mov al, byte [rbp]
+	cmp al, 0
+	jne endloop1
+	pop rax
 	jmp bf
+endloop1:
+	pop r12
+	jmp loop
+
+;Some other functions
+findend:
+	push r13
+findend1:
+	inc r12
+	mov al, byte [r12]
+	cmp al, '['
+	jne findend2
+	inc r13
+findend2:
+	cmp al, ']'
+	jne findend1
+	pop rax
+	cmp rax, r13	;compare the level of the loop,if it's equal to the origin loop,jump to bf
+	jne findend3
+	dec r13			;no matter what the ']' means,r13 should be decreased after the comparation
+	jmp bf
+
+findend3:
+	dec r13			;no matter what the ']' means,r13 should be decreased after the comparation
+	push rax
+	jmp findend1
