@@ -19,11 +19,11 @@ main:
 	xor r13, r13	;use r13 as the count of the loops
 
 ;open the source file
-	xor rax, rax
+	xor rax, rax	;set rax to 0
 	mov edi, ac
 	mov esi, r
 	call fopen
-	cmp rax, 0
+	cmp rax, 0		;0 means error here
 	jz open_error
 	mov rbx, rax
 	
@@ -34,7 +34,7 @@ getc:
 	call fgetc
 	mov byte [r12], al
 	inc r12
-	cmp al, 0xFF	;0XFF is -1 of a char
+	cmp al, 0xFF	;0XFF is -1 of a char,which means EOF
 	jne	getc
 	mov r12, code	;reset r12 to the start point of the code
 	dec r12			;make r12 one less than the start point for "inc r12"
@@ -43,7 +43,7 @@ getc:
 bf:
 	inc r12
 	mov al, byte [r12]
-	cmp al, 0xFF	;0XFF is -1 of a char
+	cmp al, 0xFF	;0XFF is -1 of a char,which means EOF
 	je q
 	
 	cmp al, '+'
@@ -76,11 +76,11 @@ malloc_error:
 err:
 	xor rax, rax
 	call printf
-	mov rdi, 1
+	mov rdi, 1		;set rdi to 1,which means exit unexpected
 	call qerror
 	
 q:
-	xor rdi, rdi
+	xor rdi, rdi	;set rdi to 0,which means exit normally
 
 qerror:
 	call exit
@@ -146,7 +146,7 @@ findend2:
 	jne findend1
 	pop rax
 	cmp rax, r13	;compare the level of the loop,if it's equal to the origin loop,jump to bf
-	jne findend3
+	jne findend3	;jumps must follow the comparations
 	dec r13			;no matter what the ']' means,r13 should be decreased after the comparation
 	jmp bf
 
