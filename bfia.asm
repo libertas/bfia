@@ -1,16 +1,15 @@
 [section .data]
 	r db "r",0
-	ac db "a.bf",0
-	openerr db "Open Error",10,0
-	mallocerr db "Malloc Error",10,0
-	output db "The char is %c",10,0
+	openerr db "Open Error:Please check the filename",10,0
+	filenameerr db "Filename Error:There should be and can only be 1 file name",10,0
+	helpmsg db "Usage:bfia [filename]",10,0
 
 [section .bss]
 	mem resb 30000
 	code resb 30000
 
 [section .text]
-extern printf, fopen, fgetc, putchar, getchar, malloc, exit
+extern printf, fopen, fgetc, putchar, getchar, exit
 global main
 main:
 ;Allocate the memory,prepare the registers
@@ -18,10 +17,16 @@ main:
 	mov r12, code	;use r12 as the pointer of the bf code
 	xor r13, r13	;use r13 as the count of the loops
 
+;check the argument count
+	cmp rdi, 1		;if rdi is equal to 1,there is no argument given and it will show the help message
+	je help
+	cmp rdi, 2		;if rdi is equal to 2,there is only 1 filename that given
+	jne filename_error
+
 ;open the source file
 	xor rax, rax	;set rax to 0
-	mov edi, ac
-	mov esi, r
+	mov rdi, qword [rsi + 8]	;[rsi + 8] means argv[1],which stores the file name
+	mov esi, r		;"r",0 that maens readonly stores in the variable r
 	call fopen
 	cmp rax, 0		;0 means error here
 	jz open_error
@@ -67,16 +72,22 @@ bf:
 ;print open error
 open_error:
 	mov rdi, openerr
+	mov r14, 1		;1 means open error
 	jmp err
 
-malloc_error:
-	mov rdi, mallocerr
+filename_error:
+	mov rdi, filenameerr
+	mov r14, 2		;2 means filename error
 	jmp err
+
+help:
+	mov rdi, helpmsg
+	mov r14, 255	;255 means need help
 
 err:
 	xor rax, rax
 	call printf
-	mov rdi, 1		;set rdi to 1,which means exit unexpected
+	mov rdi, r14	;set rdi to r14,which contains the error code
 	call qerror
 	
 q:
