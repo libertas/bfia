@@ -12,9 +12,12 @@ bcia:bcia.asm
 
 install:all
 	cp bfia /usr/local/bin/bfia
+	cp bcia /usr/local/bin/bcia
 
 uninstall:
 	rm /usr/local/bin/bfia
+	rm /usr/local/bin/bcia
 
 clean:
 	rm bfia.o bfia
+	rm bcia.o bcia

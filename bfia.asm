@@ -1,8 +1,7 @@
 [section .data]
+	msg_cmd db 10,"CMD:",0
 	msg_file_err db "File Error!", 10, 0
 	instructions db "][,.-+><", 0
-	
-	format db "%lx %lx", 10, 0
 
 [section .bss]
 	mem resb 30000
@@ -12,9 +11,21 @@ extern printf, fopen, fgetc, putchar, getchar, exit
 global main
 main:
 
+mov r12, mem
+
+mainloop:
+mov edi, msg_cmd
+mov eax, 0
+call printf
+
+mainloop1:
+
+
 call getchar
 cmp al, 0xff
 je lexit
+cmp al, 0x0a
+je mainloop1
 
 mov rcx, 9
 
@@ -28,7 +39,7 @@ mov eax, [ecx]
 jmp rax
 
 labels:
-dd main
+dd mainloop1
 dd lleft
 dd lright
 dd linc
@@ -39,52 +50,53 @@ dd lstart
 dd lend
 
 lleft:
-mov rdi, '<'
-call putchar
+dec r12
 
-jmp main
+jmp mainloop
 
 lright:
-mov rdi, '>'
-call putchar
+inc r12
 
-jmp main
+jmp mainloop
 
 linc:
-mov rdi, '+'
-call putchar
+mov al, [r12]
+inc al
+mov [r12], al
 
-jmp main
+jmp mainloop
 
 ldec:
-mov rdi, '-'
-call putchar
+mov al, [r12]
+dec al
+mov [r12], al
 
-jmp main
+jmp mainloop
 
 lprint:
-mov rdi, '.'
+mov di, [r12]
 call putchar
 
-jmp main
+jmp mainloop
 
 linput:
-mov rdi, ','
-call putchar
+call getchar
+call getchar
+mov [r12], al
 
-jmp main
+jmp mainloop
 
 lstart:
 mov rdi, '['
 call putchar
 
-jmp main
+jmp mainloop
 
 lend:
 mov rdi, ']'
 call putchar
 
-jmp main
+jmp mainloop
 
 lexit:
 mov rdi, 0
