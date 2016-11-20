@@ -1,103 +1,166 @@
 [section .data]
-	msg_cmd db 10,"CMD:",0
+	instructions db "][,.-+><", 0xff, 0
+
+	msg_r db "r", 0
+
 	msg_file_err db "File Error!", 10, 0
-	instructions db "][,.-+><", 0
+	msg_argc_err db "Usage: bfia [filename]",10,0
 
 [section .bss]
 	mem resb 30000
+	code resb 30000
 
 [section .text]
-extern printf, fopen, fgetc, putchar, getchar, exit
+extern printf, fopen, fclose, fgetc, getchar, putchar, exit
 global main
 main:
 
-mov r12, mem
+setup:
+	; check the arguments
+	cmp rdi, 2
+	jne lexit_argc_err
 
+	; open the file
+	mov rdi, [rsi + 8]
+	mov esi, msg_r
+	call fopen
+	cmp rax, 0
+	je lexit_file_err
+	mov rbp, rax
+
+	; setup the memory pointers
+	mov r12, mem
+	mov r13, code
+
+	; read the file
+	mov rbx, r13
+read:
+	mov rdi, rbp
+	call fgetc
+	mov [rbx], al
+	inc rbx
+	cmp al, 0xFF
+	jne read
+	
+	mov rdi, rbp
+	call fclose
+
+	dec r13
 mainloop:
-mov edi, msg_cmd
-mov eax, 0
-call printf
+	inc r13
 
-mainloop1:
+	mov rcx, 10
+	mov al, [r13]
+	mov rbx, instructions
+	mov rdi, rbx
+	repnz scasb
 
-
-call getchar
-cmp al, 0xff
-je lexit
-cmp al, 0x0a
-je mainloop1
-
-mov rcx, 9
-
-mov rbx, instructions
-mov rdi, rbx
-repnz scasb
-
-shl rcx, 2
-add rcx, labels
-mov eax, [ecx]
-jmp rax
+	shl rcx, 2
+	add rcx, labels
+	mov eax, [ecx]
+	jmp rax
 
 labels:
-dd mainloop1
-dd lleft
-dd lright
-dd linc
-dd ldec
-dd lprint
-dd linput
-dd lstart
-dd lend
+	dd mainloop
+	dd lexit
+	dd lleft
+	dd lright
+	dd linc
+	dd ldec
+	dd lprint
+	dd linput
+	dd lstart
+	dd lend
 
 lleft:
-dec r12
+	dec r12
 
-jmp mainloop
+	jmp mainloop
 
 lright:
-inc r12
+	inc r12
 
-jmp mainloop
+	jmp mainloop
 
 linc:
-mov al, [r12]
-inc al
-mov [r12], al
+	mov al, [r12]
+	inc al
+	mov [r12], al
 
-jmp mainloop
+	jmp mainloop
 
 ldec:
-mov al, [r12]
-dec al
-mov [r12], al
+	mov al, [r12]
+	dec al
+	mov [r12], al
 
-jmp mainloop
+	jmp mainloop
 
 lprint:
-mov di, [r12]
-call putchar
+	mov di, [r12]
+	call putchar
 
-jmp mainloop
+	jmp mainloop
 
 linput:
-call getchar
-call getchar
-mov [r12], al
+	call getchar
+	mov [r12], al
 
-jmp mainloop
+	jmp mainloop
 
 lstart:
-mov rdi, '['
-call putchar
-
-jmp mainloop
+	xor al, al
+	cmp [r12], al
+	je lstart0
+	push r13
+	jmp mainloop
+	
+	lstart0:
+	mov r14, 1
+	
+	lstart1:
+		inc r13
+		
+		mov al, '['
+		cmp [r13], al
+		je lstart_left
+		mov al, ']'
+		cmp [r13], al
+		je lstart_right
+		jmp lstart1
+	
+	lstart_left:
+		inc r14
+		jmp lstart1
+	
+	lstart_right:
+		dec r14
+		cmp r14, 0
+		jne lstart1
+		jmp mainloop
 
 lend:
-mov rdi, ']'
-call putchar
+	xor al, al
+	cmp [r12], al
+	jne lend1
+	pop r14
+	jmp mainloop
+	
+	lend1:
+	pop r13
+	dec r13
+	jmp mainloop
 
-jmp mainloop
+lexit_argc_err:
+	mov rdi, msg_argc_err
+	jmp lexit_err_msg
 
+lexit_file_err:
+	mov rdi, msg_file_err
+
+lexit_err_msg:
+	xor eax, eax
+	call printf
 lexit:
-mov rdi, 0
-call exit
+	mov rdi, 0
+	call exit
